@@ -270,15 +270,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _showDeleteConfirmationDialog(int id, String title) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm Delete'),
         content: Text('Are you sure you want to delete "$title"? This action cannot be undone.'),
         actions: [
           TextButton(
             style: TextButton.styleFrom(foregroundColor: const Color(0xFF8B5A2B)),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -287,14 +288,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
               foregroundColor: const Color(0xFF8B5A2B),
             ),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               try {
                 await widget.controller.deleteEbook(id);
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Ebook deleted successfully.')),
                 );
               } catch (e) {
-                _showErrorSnackBar('Deletion failed: ${e.toString()}');
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red[800],
+                    content: Text('Deletion failed: ${e.toString()}', style: const TextStyle(color: Colors.white)),
+                  ),
+                );
               }
             },
             child: const Text('Delete'),
