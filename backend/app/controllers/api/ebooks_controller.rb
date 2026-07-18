@@ -16,10 +16,7 @@ module Api
         return render json: { error: "Search query 'q' parameter is required" }, status: :bad_request
       end
 
-      @ebooks = Ebook.with_attached_file.with_attached_cover_image
-                     .search_by_keyword(params[:q])
-                     .filter_by_file_type(params[:file_type])
-                     .sorted_by(params[:sort_by])
+      @ebooks = Ebook.with_attached_file.with_attached_cover_image.search_by_keyword(params[:q]).filter_by_file_type(params[:file_type]).sorted_by(params[:sort_by])
 
       render json: serialize_ebooks(@ebooks), status: :ok
     end

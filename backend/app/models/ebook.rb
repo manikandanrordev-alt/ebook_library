@@ -32,11 +32,7 @@ class Ebook < ApplicationRecord
   scope :search_by_keyword, ->(query) {
     if query.present?
       cleaned_query = "%#{sanitize_sql_like(query)}%"
-      left_joins(file_attachment: :blob)
-        .where(
-          "ebooks.title ILIKE :q OR ebooks.author ILIKE :q OR active_storage_blobs.filename ILIKE :q",
-          q: cleaned_query
-        )
+      left_joins(file_attachment: :blob).where("ebooks.title ILIKE :q OR ebooks.author ILIKE :q OR active_storage_blobs.filename ILIKE :q", q: cleaned_query)
     end
   }
 
