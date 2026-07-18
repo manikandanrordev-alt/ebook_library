@@ -207,6 +207,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _openUploadBottomSheet() {
+    File? selectedFile;
+    File? selectedCover;
+    String fileLabel = 'Select PDF or EPUB *';
+    String coverLabel = 'Select Cover Image (Optional)';
+    final titleFieldController = TextEditingController();
+    final authorFieldController = TextEditingController();
+    bool isSubmitting = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -216,14 +224,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          File? selectedFile;
-          File? selectedCover;
-          String fileLabel = 'Select PDF or EPUB *';
-          String coverLabel = 'Select Cover Image (Optional)';
-          final titleFieldController = TextEditingController();
-          final authorFieldController = TextEditingController();
-          bool isSubmitting = false;
-
           return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -281,7 +281,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   icon: const Icon(Icons.insert_drive_file),
                   label: Text(fileLabel),
                   onPressed: () async {
-                    final result = await FilePicker.platform.pickFiles(
+                    final result = await FilePicker.pickFiles(
                       type: FileType.custom,
                       allowedExtensions: ['pdf', 'epub'],
                     );
@@ -304,7 +304,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   icon: const Icon(Icons.image),
                   label: Text(coverLabel),
                   onPressed: () async {
-                    final result = await FilePicker.platform.pickFiles(
+                    final result = await FilePicker.pickFiles(
                       type: FileType.image,
                     );
                     if (result != null && result.files.single.path != null) {
@@ -363,8 +363,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       : const Text('Upload Book'),
                 ),
               ],
-            );
-          };
+            ),
+          );
         },
       ),
     );

@@ -194,7 +194,7 @@ class BookshelfView extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: Colors.black75,
+                          color: Colors.black87,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

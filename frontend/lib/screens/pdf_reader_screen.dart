@@ -79,7 +79,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
               documentLoaderBuilder: (context) => const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               ),
-              pageLoaderBuilder: (context, pageIndex) => const Center(
+              pageLoaderBuilder: (context) => const Center(
                 child: CircularProgressIndicator(color: Colors.white70),
               ),
               errorBuilder: (context, error) => Center(
