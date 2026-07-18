@@ -123,6 +123,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5A2B),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(context);
               try {
@@ -538,6 +542,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF8B5A2B),
+                                foregroundColor: Colors.white,
+                              ),
                               onPressed: () => state.loadEbooks(),
                               child: const Text('Retry'),
                             ),
