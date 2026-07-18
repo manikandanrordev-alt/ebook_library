@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import '../controllers/ebook_library_controller.dart';
 import '../widgets/bookshelf_view.dart';
 import 'pdf_reader_screen.dart';
@@ -43,29 +44,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _handleBookTap(dynamic ebook) async {
-    final id = ebook['id'] as int;
-    final title = ebook['title'] as String;
-    final fileType = ebook['file_type'] as String;
-    final localPath = widget.controller.localFilePaths[id];
-
-    if (kIsWeb) {
-      if (fileType == 'pdf') {
-        _openPdfReaderWeb(id, title);
-      } else if (fileType == 'epub') {
-        _openEpubReaderWeb(id, title);
-      }
-      return;
-    }
-
-    if (localPath != null) {
-      if (fileType == 'pdf') {
-        _openPdfReader(localPath, title);
-      } else if (fileType == 'epub') {
-        _openEpubReader(localPath, title);
-      }
-    } else {
-      _showDownloadAndReadDialog(ebook);
-    }
+    _handleBookLongPress(ebook);
   }
 
   void _openPdfReader(String path, String title) {
@@ -184,6 +163,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void _handleBookLongPress(dynamic ebook) {
     final title = ebook['title'] as String;
     final id = ebook['id'] as int;
+    final fileType = ebook['file_type'] as String;
     final isDownloaded = widget.controller.localFilePaths[id] != null;
 
     showModalBottomSheet(
@@ -209,41 +189,64 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             const Divider(color: Colors.white12, height: 1),
-            if (kIsWeb)
+            if (kIsWeb) ...[
               ListTile(
                 leading: const Icon(Icons.book, color: Colors.green),
                 title: const Text('Read Now', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _openPdfReaderWeb(id, title);
-                },
-              )
-            else if (!isDownloaded)
-              ListTile(
-                leading: const Icon(Icons.cloud_download, color: Colors.blue),
-                title: const Text('Download Offline', style: TextStyle(color: Colors.white)),
-                onTap: () async {
-                  Navigator.pop(context);
-                  try {
-                    await widget.controller.downloadEbook(ebook);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Book downloaded successfully.')),
-                    );
-                  } catch (e) {
-                    _showErrorSnackBar('Download failed: ${e.toString()}');
+                  if (fileType == 'pdf') {
+                    _openPdfReaderWeb(id, title);
+                  } else if (fileType == 'epub') {
+                    _openEpubReaderWeb(id, title);
                   }
                 },
-              )
-            else
+              ),
               ListTile(
-                leading: const Icon(Icons.book, color: Colors.green),
-                title: const Text('Read Now', style: TextStyle(color: Colors.white)),
-                onTap: () {
+                leading: const Icon(Icons.download, color: Colors.blue),
+                title: const Text('Download File', style: TextStyle(color: Colors.white)),
+                onTap: () async {
                   Navigator.pop(context);
-                  final path = widget.controller.localFilePaths[id]!;
-                  _openPdfReader(path, title);
+                  final downloadUrl = '${widget.controller.apiClient.baseUrl}/api/ebooks/$id/download';
+                  try {
+                    await launchUrlString(downloadUrl, mode: LaunchMode.externalApplication);
+                  } catch (e) {
+                    _showErrorSnackBar('Could not launch download: $e');
+                  }
                 },
               ),
+            ] else ...[
+              if (!isDownloaded)
+                ListTile(
+                  leading: const Icon(Icons.cloud_download, color: Colors.blue),
+                  title: const Text('Download Offline', style: TextStyle(color: Colors.white)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    try {
+                      await widget.controller.downloadEbook(ebook);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Book downloaded successfully.')),
+                      );
+                    } catch (e) {
+                      _showErrorSnackBar('Download failed: ${e.toString()}');
+                    }
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.book, color: Colors.green),
+                  title: const Text('Read Now', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final path = widget.controller.localFilePaths[id]!;
+                    if (fileType == 'pdf') {
+                      _openPdfReader(path, title);
+                    } else if (fileType == 'epub') {
+                      _openEpubReader(path, title);
+                    }
+                  },
+                ),
+            ],
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete from Library', style: TextStyle(color: Colors.white)),
@@ -267,6 +270,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         content: Text('Are you sure you want to delete "$title"? This action cannot be undone.'),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF8B5A2B)),
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
@@ -608,24 +612,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget _buildFilterChip(String label, String? type) {
     final isSelected = widget.controller.filterFileType == type;
     return ChoiceChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? const Color(0xFF8B5A2B) : Colors.white,
+          fontSize: 10,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
       selected: isSelected,
       onSelected: (bool selected) {
         if (selected) {
           widget.controller.setFilterFileType(type);
         }
       },
-      color: MaterialStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(MaterialState.selected)) {
-          return Colors.white;
-        }
-        return Colors.transparent;
-      }),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF8B5A2B) : Colors.white,
-        fontSize: 10,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
+      selectedColor: Colors.white,
+      backgroundColor: Colors.transparent,
+      disabledColor: Colors.transparent,
       side: const BorderSide(color: Colors.white30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
