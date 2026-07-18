@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import '../controllers/ebook_library_controller.dart';
 import '../widgets/bookshelf_view.dart';
 import 'pdf_reader_screen.dart';
@@ -41,6 +40,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       widget.controller.setSearchQuery(query);
     });
+  }
+
+  void _triggerDownload(List<int> bytes, String fileType, String title) {
+    final ext = fileType == 'epub' ? 'epub' : 'pdf';
+    final filename = '${title.replaceAll(' ', '_')}.$ext';
+    final sizeKB = (bytes.length / 1024).toStringAsFixed(1);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF8B5A2B),
+        content: Text('Downloaded $filename ($sizeKB KB) to browser'),
+      ),
+    );
   }
 
   void _handleBookTap(dynamic ebook) async {
@@ -207,11 +219,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 title: const Text('Download File', style: TextStyle(color: Colors.white)),
                 onTap: () async {
                   Navigator.pop(context);
-                  final downloadUrl = '${widget.controller.apiClient.baseUrl}/api/ebooks/$id/download';
                   try {
-                    await launchUrlString(downloadUrl, mode: LaunchMode.externalApplication);
+                    final bytes = await widget.controller.apiClient.downloadEbook(id);
+                    _triggerDownload(bytes, fileType, title);
                   } catch (e) {
-                    _showErrorSnackBar('Could not launch download: $e');
+                    _showErrorSnackBar('Could not download: $e');
                   }
                 },
               ),
@@ -615,7 +627,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       label: Text(
         label,
         style: TextStyle(
-          color: isSelected ? const Color(0xFF8B5A2B) : Colors.white,
+          color: Colors.white,
           fontSize: 10,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
@@ -626,7 +638,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           widget.controller.setFilterFileType(type);
         }
       },
-      selectedColor: Colors.white,
+      selectedColor: const Color(0xFF8B5A2B),
       backgroundColor: Colors.transparent,
       disabledColor: Colors.transparent,
       side: const BorderSide(color: Colors.white30),
