@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../controllers/ebook_library_controller.dart';
@@ -45,6 +47,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final fileType = ebook['file_type'] as String;
     final localPath = widget.controller.localFilePaths[id];
 
+    if (kIsWeb) {
+      if (fileType == 'pdf') {
+        _openPdfReaderWeb(id, title);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only PDF reading is currently supported.')),
+        );
+      }
+      return;
+    }
+
     if (localPath != null) {
       if (fileType == 'pdf') {
         _openPdfReader(localPath, title);
@@ -67,6 +80,32 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ),
       ),
     );
+  }
+
+  void _openPdfReaderWeb(int id, String title) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+
+    try {
+      final bytes = await widget.controller.apiClient.downloadEbook(id);
+      Navigator.pop(context);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PdfReaderScreen(
+            pdfBytes: Uint8List.fromList(bytes),
+            title: title,
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      _showErrorSnackBar('Failed to load PDF: ${e.toString()}');
+    }
   }
 
   void _showDownloadAndReadDialog(dynamic ebook) {
@@ -134,7 +173,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             const Divider(color: Colors.white12, height: 1),
-            if (!isDownloaded)
+            if (kIsWeb)
+              ListTile(
+                leading: const Icon(Icons.book, color: Colors.green),
+                title: const Text('Read Now', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openPdfReaderWeb(id, title);
+                },
+              )
+            else if (!isDownloaded)
               ListTile(
                 leading: const Icon(Icons.cloud_download, color: Colors.blue),
                 title: const Text('Download Offline', style: TextStyle(color: Colors.white)),

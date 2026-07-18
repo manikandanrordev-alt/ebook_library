@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/api_client.dart';
@@ -18,6 +19,7 @@ class EbookLibraryController extends ChangeNotifier {
 
   EbookLibraryController({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
+  ApiClient get apiClient => _apiClient;
   List<dynamic> get ebooks => _ebooks;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -103,6 +105,9 @@ class EbookLibraryController extends ChangeNotifier {
 
     try {
       final bytes = await _apiClient.downloadEbook(id);
+      if (kIsWeb) {
+        return "";
+      }
       final dir = await getApplicationDocumentsDirectory();
       final localFile = File('${dir.path}/ebook_$id.$fileType');
       await localFile.writeAsBytes(bytes);
@@ -123,11 +128,13 @@ class EbookLibraryController extends ChangeNotifier {
 
     try {
       await _apiClient.deleteEbook(id);
-      final localPath = _localFilePaths[id];
-      if (localPath != null) {
-        final localFile = File(localPath);
-        if (await localFile.exists()) {
-          await localFile.delete();
+      if (!kIsWeb) {
+        final localPath = _localFilePaths[id];
+        if (localPath != null) {
+          final localFile = File(localPath);
+          if (await localFile.exists()) {
+            await localFile.delete();
+          }
         }
       }
       await loadEbooks();
@@ -140,6 +147,7 @@ class EbookLibraryController extends ChangeNotifier {
   }
 
   Future<void> _checkLocalFiles() async {
+    if (kIsWeb) return;
     final dir = await getApplicationDocumentsDirectory();
     for (var ebook in _ebooks) {
       final id = ebook['id'] as int;

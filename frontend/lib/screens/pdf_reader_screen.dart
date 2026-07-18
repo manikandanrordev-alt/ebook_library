@@ -1,13 +1,16 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 class PdfReaderScreen extends StatefulWidget {
-  final String filePath;
+  final String? filePath;
+  final Uint8List? pdfBytes;
   final String title;
 
   const PdfReaderScreen({
     super.key,
-    required this.filePath,
+    this.filePath,
+    this.pdfBytes,
     required this.title,
   });
 
@@ -25,7 +28,9 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   void initState() {
     super.initState();
     _pdfController = PdfController(
-      document: PdfDocument.openFile(widget.filePath),
+      document: widget.pdfBytes != null
+          ? PdfDocument.openData(widget.pdfBytes!)
+          : PdfDocument.openFile(widget.filePath!),
     );
   }
 
