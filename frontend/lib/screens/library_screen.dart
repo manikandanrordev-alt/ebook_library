@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import '../controllers/ebook_library_controller.dart';
 import '../widgets/bookshelf_view.dart';
 import 'pdf_reader_screen.dart';
+import 'epub_reader_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   final EbookLibraryController controller;
@@ -50,10 +51,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (kIsWeb) {
       if (fileType == 'pdf') {
         _openPdfReaderWeb(id, title);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Only PDF reading is currently supported.')),
-        );
+      } else if (fileType == 'epub') {
+        _openEpubReaderWeb(id, title);
       }
       return;
     }
@@ -61,10 +60,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (localPath != null) {
       if (fileType == 'pdf') {
         _openPdfReader(localPath, title);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Only PDF reading is currently supported.')),
-        );
+      } else if (fileType == 'epub') {
+        _openEpubReader(localPath, title);
       }
     } else {
       _showDownloadAndReadDialog(ebook);
@@ -75,6 +72,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PdfReaderScreen(
+          filePath: path,
+          title: title,
+        ),
+      ),
+    );
+  }
+
+  void _openEpubReader(String path, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EpubReaderScreen(
           filePath: path,
           title: title,
         ),
@@ -108,6 +116,32 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  void _openEpubReaderWeb(int id, String title) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+
+    try {
+      final bytes = await widget.controller.apiClient.downloadEbook(id);
+      Navigator.pop(context);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => EpubReaderScreen(
+            epubBytes: Uint8List.fromList(bytes),
+            title: title,
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      _showErrorSnackBar('Failed to load EPUB: ${e.toString()}');
+    }
+  }
+
   void _showDownloadAndReadDialog(dynamic ebook) {
     final title = ebook['title'] as String;
     final id = ebook['id'] as int;
@@ -133,10 +167,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 final path = await widget.controller.downloadEbook(ebook);
                 if (ebook['file_type'] == 'pdf') {
                   _openPdfReader(path, title);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Downloaded successfully. Reading only supported for PDFs.')),
-                  );
+                } else if (ebook['file_type'] == 'epub') {
+                  _openEpubReader(path, title);
                 }
               } catch (e) {
                 _showErrorSnackBar('Download failed: ${e.toString()}');
