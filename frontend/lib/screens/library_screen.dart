@@ -580,10 +580,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
           widget.controller.setFilterFileType(type);
         }
       },
-      selectedColor: Colors.white24,
-      backgroundColor: Colors.transparent,
+      color: MaterialStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return Colors.white;
+        }
+        return Colors.transparent;
+      }),
       labelStyle: TextStyle(
-        color: Colors.white,
+        color: isSelected ? const Color(0xFF8B5A2B) : Colors.white,
         fontSize: 10,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
