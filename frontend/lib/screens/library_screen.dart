@@ -8,6 +8,7 @@ import '../controllers/ebook_library_controller.dart';
 import '../widgets/bookshelf_view.dart';
 import 'pdf_reader_screen.dart';
 import 'epub_reader_screen.dart';
+import '../utils/web_download.dart' if (dart.library.io) '../utils/web_download_stub.dart';
 
 class LibraryScreen extends StatefulWidget {
   final EbookLibraryController controller;
@@ -44,15 +45,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   void _triggerDownload(List<int> bytes, String fileType, String title) {
     final ext = fileType == 'epub' ? 'epub' : 'pdf';
+    final mimeType = fileType == 'epub' ? 'application/epub+zip' : 'application/pdf';
     final filename = '${title.replaceAll(' ', '_')}.$ext';
-    final sizeKB = (bytes.length / 1024).toStringAsFixed(1);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF8B5A2B),
-        content: Text('Downloaded $filename ($sizeKB KB) to browser'),
-      ),
-    );
+    triggerWebDownload(bytes, mimeType, filename);
   }
 
   void _handleBookTap(dynamic ebook) async {
@@ -627,7 +622,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       label: Text(
         label,
         style: TextStyle(
-          color: Colors.white,
+          color: isSelected ? const Color(0xFF8B5A2B) : Colors.white,
           fontSize: 10,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
@@ -638,9 +633,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           widget.controller.setFilterFileType(type);
         }
       },
-      selectedColor: const Color(0xFF8B5A2B),
-      backgroundColor: Colors.transparent,
-      disabledColor: Colors.transparent,
+      selectedColor: Colors.white,
+      backgroundColor: const Color(0xFF8B5A2B),
+      disabledColor: const Color(0xFF8B5A2B),
       side: const BorderSide(color: Colors.white30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,

@@ -1,1 +1,1 @@
-dynamic createDownloadAnchor(List<int> bytes, String mimeType, String filename) {}
+void triggerWebDownload(List<int> bytes, String mimeType, String filename) {}

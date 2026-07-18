@@ -89,9 +89,13 @@ class ApiClient {
     final uri = Uri.parse('$_baseUrl/api/ebooks/$id');
     final response = await http.delete(uri);
 
-    if (response.statusCode != 200) {
-      final errorData = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(errorData['error'] ?? 'Failed to delete ebook');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      try {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(errorData['error'] ?? 'Failed to delete ebook');
+      } catch (_) {
+        throw Exception('Failed to delete ebook: ${response.statusCode}');
+      }
     }
   }
 }
