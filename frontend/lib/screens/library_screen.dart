@@ -158,8 +158,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5A2B),
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF8B5A2B),
             ),
             onPressed: () async {
               Navigator.pop(context);
@@ -271,7 +271,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF8B5A2B),
+            ),
             onPressed: () async {
               Navigator.pop(context);
               try {
@@ -402,8 +405,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF8B5A2B),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: isSubmitting
@@ -575,8 +578,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8B5A2B),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF8B5A2B),
                               ),
                               onPressed: () => state.loadEbooks(),
                               child: const Text('Retry'),
@@ -592,8 +595,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       onBookLongPress: _handleBookLongPress,
                     ),
           floatingActionButton: FloatingActionButton(
-            backgroundColor: const Color(0xFF8B5A2B),
-            foregroundColor: Colors.white,
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF8B5A2B),
             onPressed: _openUploadBottomSheet,
             child: const Icon(Icons.add),
           ),
