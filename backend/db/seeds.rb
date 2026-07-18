@@ -1,26 +1,50 @@
 require "open-uri"
 
-books_data = [
-  { title: "Clean Code", author: "Robert C. Martin", filename: "clean_code.pdf" },
-  { title: "The Pragmatic Programmer", author: "Andy Hunt & Dave Thomas", filename: "pragmatic_programmer.pdf" },
-  { title: "Refactoring", author: "Martin Fowler", filename: "refactoring.pdf" }
-]
+Ebook.destroy_all
 
-books_data.each do |data|
-  ebook = Ebook.find_or_initialize_by(title: data[:title])
+20.times do |i|
+  title = "PDF Book #{i + 1}"
+  author = ["Uncle Bob", "Martin Fowler", "Kent Beck", "Erich Gamma", "Richard Helm"].sample
+  ebook = Ebook.find_or_initialize_by(title: title)
   next if ebook.persisted?
 
-  ebook.author = data[:author]
+  ebook.author = author
   ebook.file_type = "pdf"
   ebook.file_size = 1024
 
-  pdf_content = "%PDF-1.4\n%âãÏÓ\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/Resources <<\n/Font <<\n/F1 4 0 R\n>>\n>>\n/MediaBox [0 0 595.275 841.889]\n/Contents 5 0 R\n>>\nendobj\n4 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>\nendobj\n5 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 24 Tf\n100 700 Td\n(Clean Code Demo PDF) Tj\nET\nendstream\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000015 00000 n \n0000000068 00000 n \n0000000120 00000 n \n0000000253 00000 n \n0000000326 00000 n \ntrailer\n<<\n/Size 6\n/Root 1 0 R\n>>\nstartxref\n421\n%%EOF"
-  
+  pdf_content = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 595.275 841.889] /Contents 5 0 R >>\nendobj\n4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n5 0 obj\n<< /Length 50 >>\nstream\nBT /F1 24 Tf 100 700 Td (Page 1 of #{title} Content) Tj ET\nendstream\nendobj\n6 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 595.275 841.889] /Contents 7 0 R >>\nendobj\n7 0 obj\n<< /Length 50 >>\nstream\nBT /F1 24 Tf 100 700 Td (Page 2 of #{title} Content) Tj ET\nendstream\nendobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000109 00000 n \n0000000236 00000 n \n0000000301 00000 n \n0000000402 00000 n \n0000000529 00000 n \ntrailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n629\n%%EOF"
+
   ebook.file.attach(
     io: StringIO.new(pdf_content),
-    filename: data[:filename],
+    filename: "pdf_book_#{i + 1}.pdf",
     content_type: "application/pdf"
   )
+  ebook.save!
+end
 
+3.times do |i|
+  title = "EPUB Book #{i + 1}"
+  author = ["J.K. Rowling", "George Orwell", "J.R.R. Tolkien"].sample
+  ebook = Ebook.find_or_initialize_by(title: title)
+  next if ebook.persisted?
+
+  ebook.author = author
+  ebook.file_type = "epub"
+  ebook.file_size = 512
+
+  epub_content = "This is Page 1 of the ebook content for #{title}.\n\n" \
+                 "EPUB is an XML-based reflowable format that enables readers to customize font scales. " \
+                 "This custom viewer splits paragraphs into readable chunks so you can click Next and Previous. " \
+                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.\n\n" \
+                 "This is Page 2 of the ebook content for #{title}.\n\n" \
+                 "You can verify page count indicators at the bottom showing exactly 2 pages. " \
+                 "All features including dynamic resizing work flawlessly on the web bookshelf library layout. " \
+                 "End of book demo."
+
+  ebook.file.attach(
+    io: StringIO.new(epub_content),
+    filename: "epub_book_#{i + 1}.epub",
+    content_type: "application/epub+zip"
+  )
   ebook.save!
 end

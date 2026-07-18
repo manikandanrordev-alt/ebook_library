@@ -1,17 +1,20 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PdfReaderScreen extends StatefulWidget {
   final String? filePath;
   final Uint8List? pdfBytes;
   final String title;
+  final int? bookId;
 
   const PdfReaderScreen({
     super.key,
     this.filePath,
     this.pdfBytes,
     required this.title,
+    this.bookId,
   });
 
   @override
@@ -23,15 +26,35 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   int _totalPages = 0;
   int _currentPage = 1;
   bool _isReady = false;
+  static const String _prefPrefix = 'last_read_pdf_';
+
+  String get _prefKey => '$_prefPrefix${widget.bookId ?? widget.title.hashCode}';
 
   @override
   void initState() {
     super.initState();
+    _initReader();
+  }
+
+  Future<void> _initReader() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPage = prefs.getInt(_prefKey) ?? 1;
+
     _pdfController = PdfController(
       document: widget.pdfBytes != null
           ? PdfDocument.openData(widget.pdfBytes!)
           : PdfDocument.openFile(widget.filePath!),
+      initialPage: savedPage,
     );
+
+    setState(() {
+      _currentPage = savedPage;
+    });
+  }
+
+  Future<void> _saveLastReadPage(int page) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_prefKey, page);
   }
 
   @override
@@ -47,9 +70,19 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF2A2A2A),
         foregroundColor: Colors.white,
-        title: Text(
-          widget.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (_isReady && _currentPage > 1)
+              Text(
+                'Last read: page $_currentPage',
+                style: const TextStyle(fontSize: 11, color: Colors.white54),
+              ),
+          ],
         ),
         actions: [
           if (_isReady)
@@ -78,6 +111,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
               setState(() {
                 _currentPage = page;
               });
+              _saveLastReadPage(page);
             },
             builders: PdfViewBuilders<DefaultBuilderOptions>(
               options: const DefaultBuilderOptions(),

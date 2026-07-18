@@ -3,17 +3,20 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EpubReaderScreen extends StatefulWidget {
   final String? filePath;
   final Uint8List? epubBytes;
   final String title;
+  final int? bookId;
 
   const EpubReaderScreen({
     super.key,
     this.filePath,
     this.epubBytes,
     required this.title,
+    this.bookId,
   });
 
   @override
@@ -25,6 +28,9 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
   double _fontSize = 16.0;
   int _currentPage = 1;
   List<String> _pages = [];
+  static const String _prefPrefix = 'last_read_epub_';
+
+  String get _prefKey => '$_prefPrefix${widget.bookId ?? widget.title.hashCode}';
 
   @override
   void initState() {
@@ -71,7 +77,7 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
     }
   }
 
-  void _paginateText(String text) {
+  void _paginateText(String text) async {
     final cleanText = text.replaceAll('\r', '');
     final paragraphs = cleanText.split('\n');
     List<String> pagesList = [];
@@ -95,10 +101,25 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
       pagesList.add("No readable text content in this book.");
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final savedPage = prefs.getInt(_prefKey) ?? 1;
+    final startPage = savedPage.clamp(1, pagesList.length);
+
     setState(() {
       _pages = pagesList;
+      _currentPage = startPage;
       _isLoading = false;
     });
+  }
+
+  Future<void> _saveLastReadPage(int page) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_prefKey, page);
+  }
+
+  void _goToPage(int page) {
+    setState(() => _currentPage = page);
+    _saveLastReadPage(page);
   }
 
   @override
@@ -108,9 +129,19 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF8B5A2B),
         foregroundColor: Colors.white,
-        title: Text(
-          widget.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (!_isLoading && _currentPage > 1)
+              Text(
+                'Last read: page $_currentPage of ${_pages.length}',
+                style: const TextStyle(fontSize: 11, color: Colors.white70),
+              ),
+          ],
         ),
         actions: [
           IconButton(
@@ -134,6 +165,12 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
           : SafeArea(
               child: Column(
                 children: [
+                  LinearProgressIndicator(
+                    value: _pages.isEmpty ? 0 : _currentPage / _pages.length,
+                    backgroundColor: const Color(0xFFE8D5B5),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5A2B)),
+                    minHeight: 3,
+                  ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -156,26 +193,31 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton(
+                        TextButton.icon(
                           onPressed: _currentPage > 1
-                              ? () => setState(() => _currentPage--)
+                              ? () => _goToPage(_currentPage - 1)
                               : null,
-                          child: const Text(
-                            'Previous',
-                            style: TextStyle(color: Color(0xFF8B5A2B), fontWeight: FontWeight.bold),
+                          icon: const Icon(Icons.chevron_left, size: 18),
+                          label: const Text('Previous'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF8B5A2B),
                           ),
                         ),
                         Text(
                           '$_currentPage / ${_pages.length}',
-                          style: const TextStyle(color: Color(0xFF5C4033), fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Color(0xFF5C4033),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        TextButton(
+                        TextButton.icon(
                           onPressed: _currentPage < _pages.length
-                              ? () => setState(() => _currentPage++)
+                              ? () => _goToPage(_currentPage + 1)
                               : null,
-                          child: const Text(
-                            'Next',
-                            style: TextStyle(color: Color(0xFF8B5A2B), fontWeight: FontWeight.bold),
+                          icon: const Icon(Icons.chevron_right, size: 18),
+                          label: const Text('Next'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF8B5A2B),
                           ),
                         ),
                       ],

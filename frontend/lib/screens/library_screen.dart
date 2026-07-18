@@ -93,6 +93,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           builder: (context) => PdfReaderScreen(
             pdfBytes: Uint8List.fromList(bytes),
             title: title,
+            bookId: id,
           ),
         ),
       );
@@ -119,6 +120,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           builder: (context) => EpubReaderScreen(
             epubBytes: Uint8List.fromList(bytes),
             title: title,
+            bookId: id,
           ),
         ),
       );
